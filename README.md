@@ -1,4 +1,4 @@
-# OS_MemoryVirtualizer
+# OS Memory Virtualizer
 
 **OS_MemoryVirtualizer** is a lightweight, dependable memory management system that simulates a basic virtual memory architecture. Initially developed as a university project, this version expands on the original design by adding missing features, such as process reaping (`kill`), and improving both code structure and debugging support.
 
