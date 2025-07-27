@@ -1,135 +1,193 @@
-# Project3
-### Operating Systems Memory Manager
+# OS_MemoryVirtualizer
+
+**OS_MemoryVirtualizer** is a lightweight, dependable memory management system that simulates a basic virtual memory architecture. Initially developed as a university project, this version expands on the original design by adding missing features, such as process reaping (`kill`), and improving both code structure and debugging support.
+
+It demonstrates a deep understanding of low-level OS concepts such as virtual-to-physical address translation, paging, memory protection, and disk swapping — all built from scratch in C with minimal dependencies.
+
+
+## Build & Run
+
+### Make Commands
+```bash
+make        # Compiles the project
+make clean  # Removes build artifacts
+````
+
+### Run the Program
+
+```bash
+./main
+```
+
+---
 
 <br>
 
-### Make commands
-- #### `make`
-- #### `make clean`
+## Debugging Flags
 
-### Run program
-- #### `./main`
+You can enable optional runtime visualizations using the following flags:
 
-### Run with debug flags
-- #### `./main -help`
-    - ###### will not run, but will display all known flags
-- #### `./main -debug_pagetable`
-    - ###### will run and will display pagetable before and after each command is given to the program
-- #### `./main -debug_pagetable_b`
-    - ###### will run and will display pagetable (in binary bits) before and after each command is given to the program
-- #### `./main -debug_ram`
-    - ###### will run and will display ram (in hex) before and after each command is given to the program
-- #### `./main -debugPT -debugPT_b -debugRAM`
-    - ###### will run with all debug tools
-- ###### NOTE: these flags can all be chained as long as `-h` / `-help` is NOT given because those flags kill the program
+* `-debug_pagetable`
+  Show the page table in a readable format (decimal values).
 
-<br>
+* `-debug_pagetable_b`
+  Show the binary representation of the page table (bit-by-bit).
 
-## Legal Input
-- #### %d<$ProcessID>, %s<$instruction>, %d<$eax>, %d<$ebx>
-    - ###### $ProcessID => value from 0 - 14 (project only requires 0-3 but we are able to support more)
-    - ###### $instruction => values: "map", "store", "load", "exit"
-        - ###### map -> reserves physical location and sets read/write protection bit ($ebx == 0 ? 0 : 1) for virtual byte in 4 ranges (0-15, 16-31, 32-47, 48-63)
-        - ###### store -> saves $ebx to virtual address $eax as long as $eax is in a virtual page that has already been mapped
-        - ###### load -> retrieves value saved in virtual address $eax as long as virtual page has already been mapped
-        - ###### exit -> ends run. dealocates all memory alocated durring runtime, whipes DISK and tracker.
-    - ###### $eax => value from 0 - 63 (virtual byte)
-    - ###### $ebx => value from 0 - 255 (setter value unless irrelevant: i.e. functions load and exit)
-    
-<br>
+* `-debug_ram`
+  Dump the full contents of RAM in hex after every instruction.
 
-## How our PageTables work
-###### Note: to see the back-end and how our pagetables work in real-time add flag `-debug_pagetable_b` to see in bits or `-debug_pagetable` to see in decimal
-- #### The first page in RAM (frame0) (16bytes) is reserved for all four page tables
-- #### Our pagetables are 4 bytes in size. The first 4 bits (bits 0-3) store the following atribute:
-    - #### Process ID
-        - ###### Size: 4 bits
-        - ###### A value from 0-15
-        - ###### Value 0 means no process asigned
-        - ###### Value 1-15 is one higher then the process id (supports process ids 0-14)
-- #### The next 28 bits (bits 4-31) store an array of size 4 where each member is 7 bits. (4-10, 11-17, 18-24, 25-31) The members are: 
-    - #### Physical Page Location for Virtual Page(index of array)
-        - ###### Size: 6 bits
-        - ###### A value from 0-63
-        - ###### A value of 63 (0b 1111 11) means this virtual page has not yet been mapped to a physical frame
-        - ###### A value of 0-3 (0b 0000 00 - 0b 1100 00) means this virtual page has been mapped to a physical frame in RAM
-            - ###### NOTE: that a physical frame of 0 (frame0) is impossible because the PageTables reserve that slot
-        - ###### A value of 4-62 (0b 0010 00 - 0b 0111 11) means this virtual page has been mapped to a physical frame in DISK (file:"disk")
-    - #### Protection / ReadWrite Bit for Virtual Page(index of array)
-        - ###### Size: 1 bit
-        - ###### Value of 0 (false) means this page cannot be written to, only read from
-        - ###### Value of 1 (true) means this page can be both written to and read from
-        
-<br>
+* All flags can be combined (e.g., `./main -debug_pagetable -debug_ram`)
 
-## How our functions work (map, store, load, exit)
-- #### map
-    - ###### Takes `int ProcessID`(0-14), `int byte_requested`(0-63), `bool protection_bit`(0-1)
-    - ###### Adds ProcessID to pagetable if pagetale does not yet have this ProcessID
-    - ###### Requests next available page (1-62) from tracker (which keeps track of which page is available, and increments tracker when called)
-    - ###### Sets respective physical page slot to next available page recieved and sets protection bit
-- #### store
-    - ###### Takes `int ProcessID`(0-14), `int virtual_byte`(0-63), `char value`(0-255)
-    - ###### Checks to make sure ProcessID is already in pagetable (returns / error-s if false)
-    - ###### Checks to make sure virtual_byte is in page already alocated to a frame (returns / error-s if false)
-    - ###### Checks to make sure that frame is on RAM (1-3) (swaps if false)
-    - ###### Sets respective byte to the value of `char value`(0-255) in RAM
-- #### load
-    - ###### Takes `int ProcessID`(0-14), `int virtual_byte`(0-63), `char *address_of_register`(unused in current setup)
-    - ###### Checks to make sure ProcessID is already in pagetable (returns / error-s if false)
-    - ###### Checks to make sure virtual_byte is in page already alocated to a frame (returns / error-s if false)
-    - ###### Checks to make sure that frame is on RAM (1-3) (swaps if false)
-    - ###### Sets register in address `address_of_register` to value recieved from RAM
-- #### exit
-    - ###### Stops process, and dealocates all allocated memory (RAM / DISK / TRACKER / etc)
-    
-<br>
+* `-help` or `-h`
+  Prints all supported flags and exits.
 
-## How we handle swaping of frames
-- #### Locate frame in DISK we need
-    - ###### Given by calling process when calling function `swap()`
-- #### Locate frame in RAM we will swap to
-    - ###### Tracker tells us which frame has been idle the longest (that's the frame we chose)
-    - ###### NOTE: this is better then round-robbin because if a process is constantly using a frame it will be subbed out to DISK in round-robin, but won't in our method
-- #### Swap the two frames
-    - ###### Save the frame in RAM to a temporary DISK row
-    - ###### Move the wanted DISK row into the frame in RAM
-    - ###### Move the temporary DISK row into wanted frame in RAM
-- #### Update the Pagetables
-    - ###### Search each array in the pagetable until you find DISK frame or RAM frame
-    - ###### Swap them to the other (because those frames have been swapped)
+---
 
 <br>
 
-## How the DISK works
-- #### One single file named "disk"
-- #### Gets created once program is run, and removed when program exits
-- #### Each row stands for frames 4-62 (disk_frams 0-58)
-- #### Disk is in hex where 2 chars stand for one byte of hex (0x00 - 0xFF -> 0 - 255)
-- #### Init sets each row to 32 0s (16 bytes of zero / NULL)
-        
+## Legal Input Format
+
+Each instruction must follow this format:
+
+```text
+<ProcessID>,<Instruction>,<VirtualByte>,<Value>
+```
+
+### Example Input
+
+```text
+0,map,0,1
+0,store,0,42
+0,load,0,0
+0,kill,0,0
+1,map,0,1
+0,exit,0,0
+```
+
+### Supported Instructions
+
+| Instruction | Description                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------------- |
+| `map`       | Maps a virtual page to RAM or disk with a specified protection bit (0 = read-only, 1 = read/write).  |
+| `store`     | Writes a value to a mapped virtual address if writable.                                              |
+| `load`      | Loads a value from a mapped virtual address.                                                         |
+| `kill`      | Clears the page table entry for a given process, freeing its slot for reuse. *(New in this version)* |
+| `exit`      | Terminates the simulation and deallocates all memory/disk/tracker files.                             |
+
+---
+
 <br>
 
-## How the tracker works
-- #### Tracking most idle frame in RAM
-    - ###### Implemented as a stack in DISK
-    - ###### init creates tracker file with value "1 2 3"
-    - ###### Meaning 1 is most idle, while 2 is next-most dile, and 3 is least idle
-    - ###### Each time a page is used it gets removed from the file, and gets added to the end
-        - ###### Example: 2 is used -> remove: "1 3", add to end: "1 3 2", 1 is still most idle, but now 2 is least idle, while 3 has moved to second-most idle
-    - ###### Each time a most-idle page is requested the first value is returned
-- #### Tracking what the next available frame is (used only by the `map()` function)
-    - ###### Implemented as a counter in DISK
-    - ###### init created a tracker file with value "1"
-    - ###### Value gets incremented each time it is retrieved
-    - ###### ** Value is **NOT** incremented if peeked
+## Architecture Overview
+
+### Memory Layout
+
+* **64 bytes of RAM**
+
+  * 16 bytes reserved for the page table (Frame 0)
+  * 3 × 16-byte RAM frames (Frame 1–3) for active data pages
+* **208 bytes of Disk**
+
+  * 13 × 16-byte frames used to swap out virtual pages (Frame 4–62)
+
+### Page Table Format
+
+* 4 rows total, each 4 bytes long
+* Bit-packed format:
+
+  * 4 bits: Process ID (`0000` = unused, `0001–1111` = PID + 1)
+  * 28 bits: 4 × (6-bit physical frame + 1-bit writeable flag)
+
+### Page Swapping
+
+* Pages not currently in RAM are swapped in from disk
+* Least idle RAM frame is selected for eviction using a tracker
+* Swapped-out RAM frames are saved to disk and vice versa
+
+---
 
 <br>
 
-## Why we chose this architecture
-- #### Esialy increase sizeof RAM 
-    - ###### Increase the sizeof RAM 64 -> 64 + x*16 where x is any number that will be added to number of frames on RAM from DISK
-- #### Esialy increase sizeof pagetable from 16 to 32 bytes 
-    - ###### Increases the max number of processes from 4 to 8
-    - ###### 32 -> 48 would increase the max number of processes from 8 to 12
-    - ###### 48 -> 56 would increase the max number of processes from 12 to 14 (which is the max supported by this architecture)
+## Disk and Tracker
+
+* A `disk` file is created at runtime to simulate page storage
+* Each 16-byte frame is written as a line of hex (2 hex characters per byte)
+* A `nextpage.tracker` file tracks RAM frame idleness:
+
+  * Operates like a stack with values "1 2 3"
+  * Updated on every page access or swap
+
+---
+
+<br>
+
+## Sample Run
+
+```text
+Instruction? 0,map,0,1
+Mapped virtual address 0 of PID 0 to frame 1 (writable)
+
+Instruction? 0,store,0,99
+Stored value 99 at virtual address 0 (physical frame 1)
+
+Instruction? 0,load,0,0
+The value 99 is at virtual address 0 (physical frame 1)
+
+Instruction? 0,kill,0,0
+Process 0 killed and its page table entry cleared.
+
+Instruction? 1,map,0,1
+Mapped virtual address 0 of PID 1 to frame 2 (writable)
+```
+
+---
+
+<br>
+
+## What’s New in This Version
+
+* ✅ **`kill` command** to free up page table slots on demand
+* ✅ Refactored instruction handling loop (easier to extend)
+* ✅ Typed constants for cleaner page table initialization
+* ✅ Improved debug output with consistent formatting
+* ✅ Professional README and code documentation
+
+---
+
+<br>
+
+## 🔭 Future Work
+
+This memory virtualizer is intentionally minimal — but extensible. Future enhancements could include:
+
+*  **ASM-like Instruction Runner**
+  Build a companion project that executes simple assembly files using this memory system — simulate up to 4 concurrent processes accessing isolated virtual spaces.
+
+*  **Enhanced Debugging Tools**
+  Add a curses-based TUI or graphical visualizer to show page table, RAM, and disk mappings live.
+
+*  **Instruction Logging**
+  Optionally log each instruction’s effect on RAM and page table to a file or stdout.
+
+*  **Test Harness**
+  Create regression tests using predefined input scripts and expected memory state dumps.
+
+---
+
+<br>
+
+##  File Structure
+
+```text
+main.c               // Instruction input and dispatch
+pagetable.c/.h       // Page table layout and manipulation
+ram.c/.h             // RAM allocator and hex dumper
+tracker.c/.h         // RAM idleness + next page tracking
+disk.c/.h            // Disk-backed page swap system
+string.c/.h          // Lightweight string utils
+Makefile
+README.md
+```
+
+
+<br>
