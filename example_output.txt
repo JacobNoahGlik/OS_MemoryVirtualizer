@@ -1,0 +1,64 @@
+aman@Gupta-Book:/mnt/c/Users/amana/OneDrive/Documents/GitHub/OSProject3$ make
+gcc -Wall -Werror -c -o main.o main.c
+gcc -pthread -Wall -Werror -o main main.o ram.c pagetable.c tracker.c string.c disk.c
+
+aman@Gupta-Book:/mnt/c/Users/amana/OneDrive/Documents/GitHub/OSProject3$ ./main
+
+Instruction? 0,map,0,1
+WARNING: all pagetables reside in physical frame 0, but only take 4 bytes each.
+Added page table for PID 0 into physical frame 0 (bytes 0, 1, 2, and 3)
+Mapped virtual address 0 (page 0) into physical frame 1 (on RAM)
+
+Instruction? 0,store,7,255
+Stored value 255 at virtual address 7 (physical address 23)
+
+Instruction? 0,load,7,0
+The value 255 is virtual address 7 (physical address 23)
+
+Instruction? 0,map,17,0
+Mapped virtual address 17 (page 1) into physical frame 2 (on RAM)
+
+Instruction? 0,store,18,1
+Error: writes are not allowed to this page
+
+Instruction? 0,map,17,1
+Updating permissions for virtual page 1 (frame 2)
+
+Instruction? 0,store,18,1
+Stored value 1 at virtual address 18 (physical address 34)
+
+Instruction? 0,load,18,0
+The value 1 is virtual address 18 (physical address 34)
+
+Instruction? 0,map,18,1
+Error: virtual page 1 is already mapped with rw_bit=1
+
+Instruction? 1,map,0,1
+WARNING: all pagetables reside in physical frame 0, but only take 4 bytes each.
+Added page table for PID 1 into physical frame 0 (bytes 4, 5, 6, and 7)
+Mapped virtual address 0 (page 0) into physical frame 3 (on RAM)
+
+Instruction? 2,map,0,0
+WARNING: all pagetables reside in physical frame 0, but only take 4 bytes each.
+Added page table for PID 2 into physical frame 0 (bytes 8, 9, 10, and 11)
+Mapped virtual address 0 (page 0) into physical frame 4 (on DISK)
+
+Instruction? 2,map,14,1
+Updating permissions for virtual page 0 (frame 4)
+
+Instruction? 2,store,14,152
+Swapped physical frame 3 (on RAM) to swap-slot 0 (represented as 4 in pagetable)
+Swapped swap-slot 0 (represented as 4 in pagetable) to physical frame 3 (on RAM)
+Stored value 152 at virtual address 14 (physical address 62)
+
+Instruction? 2,load,14,0
+The value 152 is virtual address 14 (physical address 62)
+
+Instruction? 2,load,34,0
+ERROR: PAGE 2 OF PROCESS 2 HAS NOT BEEN MAPPED YET
+
+
+Instruction? ^C
+
+aman@Gupta-Book:/mnt/c/Users/amana/OneDrive/Documents/GitHub/OSProject3$ make clean
+rm -f main.o main
