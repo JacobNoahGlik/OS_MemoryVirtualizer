@@ -16,7 +16,7 @@ make clean  # Removes build artifacts
 ### Run the Program
 
 ```bash
-./main
+./main -debug_pagetable -debug_pagetable_b -debug_ram
 ```
 
 ---
