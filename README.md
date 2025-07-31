@@ -61,7 +61,7 @@ Each instruction must follow this format:
 0,load,0,0
 0,kill,0,0
 1,map,0,1
-0,exit,0,0
+1,exit,0,0
 ```
 
 ### Supported Instructions
@@ -158,7 +158,7 @@ Mapped virtual address 0 of PID 1 to frame 2 (writable)
 
 ## 🔭 Future Work
 
-This memory virtualizer is intentionally minimal — but extensible. Future enhancements could include:
+This memory virtualizer is intentionally minimal, but extensible. Future enhancements could include:
 
 *  **ASM-like Instruction Runner**
   Build a companion project that executes simple assembly files using this memory system — simulate up to 4 concurrent processes accessing isolated virtual spaces.
